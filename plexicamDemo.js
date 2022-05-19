@@ -10,6 +10,7 @@ import {
   PLEXICAM_Z,
   MEETING_GROUP,
   FULLSCREEN_BUTTON,
+  FULLSCREEN_DOCK_BUTTON,
   ENTER_FULLSCREEN_ICON,
   EXIT_FULLSCREEN_ICON,
   EYE_TRACKING_BUTTON,
@@ -84,7 +85,7 @@ var objects = [
   //   },
   // },
   // {
-  //   id: FULLSCREEN_BUTTON,
+  //   id: FULLSCREEN_DOCK_BUTTON,
   //   src: ENTER_FULLSCREEN_ICON,
   //   z: DOCK_Z + 1,
   //   width: DOCK_HEIGHT, height: DOCK_HEIGHT,
@@ -138,10 +139,9 @@ var objects = [
   },
   {
     id: 'settings',
-    // src: `${ROOT_URL}/assets/images/Settings Window.png`,
-    src: `${ROOT_URL}/assets/images/Settings Window.png`,
+    src: `${ROOT_URL}/assets/images/Settings Window - Simplified.png`,
     x: 568, y: 160, z: 5,
-    width: 450, height: 610,
+    width: 450, height: 500,
     group: {
       name: 'settings',
     },
@@ -150,9 +150,10 @@ var objects = [
     windowTitle: 'Settings',
   },
   {
-    id: `${FULLSCREEN_BUTTON} 2`,
-    type: TYPES.invisibleButton,
-    x: 583, y: 437, z: 5.1,
+    id: FULLSCREEN_BUTTON,
+    type: TYPES.button,
+    text: 'Enter Fullscreen',
+    x: 583, y: 266, z: 5.1,
     width: 141, height: LINE_HEIGHT,
     group: {
       name: 'settings',
@@ -167,8 +168,8 @@ var objects = [
     options: screenSizes,
     defaultText: 'Select your screen size',
     onChange: screenSizeSelected,
-    x: 583, y: 480, z: 5.3,
-    width: 150, height: 20,
+    x: 583, y: 316, z: 5.3,
+    width: 150, height: LINE_HEIGHT,
     group: {
       name: 'settings',
     },
@@ -180,12 +181,23 @@ var objects = [
     value: screenTypes.find(sts => sts.value === isHiDpiDisplay).text,
     options: screenTypes,
     onChange: screenTypeSelected,
-    x: 583, y: 593, z: 5.2,
-    width: 150, height: 20,
+    x: 583, y: 370, z: 5.2,
+    width: 150, height: LINE_HEIGHT,
     group: {
       name: 'settings',
     },
     mobility: ['x', 'y'],
+  },
+  {
+    id: 'store button',
+    type: TYPES.invisibleButton,
+    x: 700, y: 458, z: 5.1,
+    width: 175, height: LINE_HEIGHT,
+    group: {
+      name: 'settings',
+    },
+    mobility: ['x', 'y'],
+    onClick: goToStore,
   },
   {
     id: BULLSEYE_DISPLAY_SETTING,
@@ -193,7 +205,7 @@ var objects = [
     value: 'Off',
     options: booleanOptions,
     onChange: bullseyeDisplaySelected,
-    x: 583, y: 734, z: 5.1,
+    x: 583, y: 632, z: 5.1,
     width: 150, height: 20,
     group: {
       name: 'settings',
@@ -282,7 +294,7 @@ function init() {
   document.addEventListener('webkitfullscreenchange', fullscreenChanged)
 
   // Register resize handler
-  // window.addEventListener('resize', fitCanvasToContainer)
+  window.addEventListener('resize', onResize)
 }
 
 function fitCanvasToContainer() {
@@ -572,6 +584,10 @@ function screenTypeSelected(option) {
   recalculateScreen()
 }
 
+function goToStore() {
+  window.open('https://beta.plexicam.com/collections', '_blank')
+}
+
 function bullseyeDisplaySelected(option) {
   const bullseyeDisplaySetting = objects.find(o => o.id === BULLSEYE_DISPLAY_SETTING)
 
@@ -776,7 +792,7 @@ function drawButton(object) {
   // Draw the button
   context.beginPath()
   context.roundRect(x, y, width, height, BUTTON_RADIUS)
-  context.fillStyle = color
+  context.fillStyle = color || colors.btn
   context.fill()
 
   // Write the text
@@ -1001,12 +1017,17 @@ function fullscreenChanged() {
     // Determine whether we're in fullscreen
     getIsFullscreen()
 
-    // Manage the fullscreen button's state
+    // Manage the settings button's state
     const fullscreenButton = objects.find(o => o.id === FULLSCREEN_BUTTON)
     if (fullscreenButton) {
+      fullscreenButton.text = fullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'
+    }
+    // Manage the dock button's state
+    const fullscreenDockButton = objects.find(o => o.id === FULLSCREEN_DOCK_BUTTON)
+    if (fullscreenDockButton) {
       const element = document.createElement('img')
       element.src = fullscreen ? EXIT_FULLSCREEN_ICON : ENTER_FULLSCREEN_ICON
-      fullscreenButton.element = element
+      fullscreenDockButton.element = element
     }
 
     fitCanvasToContainer()
@@ -1021,4 +1042,10 @@ function getIsFullscreen() {
     || document.msFullscreenElement
     || document.webkitFullscreenElement
     || document.webkitIsFullScreen)
+}
+
+function onResize() {
+  // Skip resize if we hopped into fullscreen. The fullscreen handler will handle it.
+  if (!fullscreen)
+    fitCanvasToContainer()
 }

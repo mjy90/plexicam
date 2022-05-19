@@ -14,6 +14,7 @@ export const PLEXICAM_GROUP = 'plexicam'
 export const PLEXICAM_Z = 1000
 export const MEETING_GROUP = 'meeting'
 export const FULLSCREEN_BUTTON = 'fullscreen button'
+export const FULLSCREEN_DOCK_BUTTON = `dock_${FULLSCREEN_BUTTON}`
 export const ENTER_FULLSCREEN_ICON = `${ROOT_URL}/assets/icons/fullscreen.png`
 export const EXIT_FULLSCREEN_ICON = `${ROOT_URL}/assets/icons/fullscreen-exit.png`
 export const EYE_TRACKING_BUTTON = 'eye tracking button'

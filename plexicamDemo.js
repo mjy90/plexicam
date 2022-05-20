@@ -44,6 +44,7 @@ import {
 import {
   preloadAsset,
   getGroupedObjects,
+  drawRoundedRectangle,
 } from './helpers.js'
 import { filteredGaze, webgazerInit } from './webgazer.js'
 
@@ -153,8 +154,8 @@ var objects = [
     id: FULLSCREEN_BUTTON,
     type: TYPES.button,
     text: 'Enter Fullscreen',
-    x: 583, y: 266, z: 5.1,
-    width: 141, height: LINE_HEIGHT,
+    x: 585, y: 263, z: 5.1,
+    width: 150, height: BUTTON_HEIGHT,
     group: {
       name: 'settings',
     },
@@ -168,8 +169,8 @@ var objects = [
     options: screenSizes,
     defaultText: 'Select your screen size',
     onChange: screenSizeSelected,
-    x: 583, y: 316, z: 5.3,
-    width: 150, height: LINE_HEIGHT,
+    x: 585, y: 315, z: 5.3,
+    width: 150, height: BUTTON_HEIGHT,
     group: {
       name: 'settings',
     },
@@ -181,8 +182,8 @@ var objects = [
     value: screenTypes.find(sts => sts.value === isHiDpiDisplay).text,
     options: screenTypes,
     onChange: screenTypeSelected,
-    x: 583, y: 370, z: 5.2,
-    width: 150, height: LINE_HEIGHT,
+    x: 585, y: 367, z: 5.2,
+    width: 150, height: BUTTON_HEIGHT,
     group: {
       name: 'settings',
     },
@@ -205,8 +206,8 @@ var objects = [
     value: 'Off',
     options: booleanOptions,
     onChange: bullseyeDisplaySelected,
-    x: 583, y: 632, z: 5.1,
-    width: 150, height: 20,
+    x: 585, y: 631, z: 5.1,
+    width: 150, height: BUTTON_HEIGHT,
     group: {
       name: 'settings',
     },
@@ -791,18 +792,19 @@ function drawButton(object) {
 
   // Draw the button
   context.beginPath()
-  context.roundRect(x, y, width, height, BUTTON_RADIUS)
+  drawRoundedRectangle(x, y, width, height, BUTTON_RADIUS, context)
   context.fillStyle = color || colors.btn
   context.fill()
 
   // Write the text
   if (text) {
+    const textOffset = y+MARGIN+(object.height/2)
+
     context.fillStyle = colors.btnText
     context.font = `${TEXT_SIZE}px Sans-Serif`
     context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    // context.fillText(text, x + (width / 2), y + (height / 2))
-    context.fillText(text, x + (width / 2), y + (height / 2))
+    context.textBaseline = 'alphabetic'
+    context.fillText(text, x + (width / 2), textOffset)
   }
 }
 
@@ -818,11 +820,9 @@ function drawDropdown(object) {
     : object.height
   context.fillStyle = colors.window
   context.strokeStyle = 'black'
-  context.beginPath()
-  context.rect(left, top, object.width, boxHeight)
+  drawRoundedRectangle(left, top, object.width, boxHeight, BUTTON_RADIUS, context)
   context.fill()
   context.stroke()
-  context.closePath()
 
   // Draw arrow
   const arrowSize = [8, 5]

@@ -592,6 +592,8 @@ function goToStore() {
 function bullseyeDisplaySelected(option) {
   const bullseyeDisplaySetting = objects.find(o => o.id === BULLSEYE_DISPLAY_SETTING)
 
+  if (bullseyeDisplaySetting.value === option.text) return
+
   bullseyeDisplaySetting.value = option.text
 
   if (option.value)

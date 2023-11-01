@@ -97,7 +97,7 @@ export function drawDropdown(context, object) {
   const textOffset = top + MARGIN + (object.height / 2)
   const displayValue = object.value ? `${object.value}` : object.defaultText
   context.fillStyle = 'black'
-  context.font = '12px Sans-Serif'
+  context.font = `${FONT_SIZE}px ${FONT_FAMILY}`
   context.textAlign = 'left'
   context.textBaseline = 'alphabetic'
   context.fillText(displayValue, left + MARGIN, textOffset)
@@ -106,7 +106,7 @@ export function drawDropdown(context, object) {
 export function drawDropdownOption(context, option) {
   // Draw text
   context.fillStyle = 'black'
-  context.font = '12px Sans-Serif'
+  context.font = `${FONT_SIZE}px ${FONT_FAMILY}`
   context.fillText(option.text, option.x + MARGIN, option.y + LINE_HEIGHT - MARGIN)
 }
 
@@ -135,6 +135,16 @@ export function drawWindowManager(context, object) {
   // Fill the shape
   context.fillStyle = colors.toolbar
   context.fill()
+
+  // Draw the window title
+  const textOffset = top + MARGIN + (WINDOW_MANAGER_HEIGHT / 2)
+  context.save()
+  context.fillStyle = FONT_COLOR_LIGHT
+  context.font = `${FONT_SIZE}px ${FONT_FAMILY}`
+  context.textAlign = 'center'
+  context.textBaseline = 'alphabetic'
+  context.fillText(object.windowTitle, left + (object.width / 2), textOffset)
+  context.restore()
 
   // Draw buttons
   const halfHeight = (WINDOW_MANAGER_HEIGHT / 2)

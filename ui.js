@@ -255,7 +255,8 @@ export function formatTextForArea(context, text, width) {
 export function drawScrollingText(context, object) {
   const { text, x, y, width, height } = object
   const lines = text.split('\n')
-  const startOffset = height - ((SCROLLING_TEXT_LINES_PER_SECOND * (Date.now() - START_TIME) / 1000) * TELEPROMPTER_LINE_HEIGHT)
+  const totalHeight = lines.length * TELEPROMPTER_LINE_HEIGHT + height
+  const startOffset = (height - (((SCROLLING_TEXT_LINES_PER_SECOND * (Date.now() - START_TIME) / 1000) * TELEPROMPTER_LINE_HEIGHT) % totalHeight))
 
   context.save()
   context.beginPath()

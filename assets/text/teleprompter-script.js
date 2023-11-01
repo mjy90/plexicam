@@ -1,5 +1,4 @@
-export const TELEPROMPTER_SCRIPT = `
-  The world is definitely changing.
+export const TELEPROMPTER_SCRIPT = `The world is definitely changing.
   Technology is becoming more advanced and as it does you might find yourself in a position where you're asked to do your job as a remote worker.
   Eventually you will probably find yourself in this very situation.
   For those of you that currently live and work abroad this news is welcome.

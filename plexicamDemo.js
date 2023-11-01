@@ -191,7 +191,7 @@ var objects = [
     type: TYPES.dropdown,
     value: null,
     options: screenSizes,
-    defaultText: 'Select your screen size',
+    defaultText: 'Select screen size',
     onChange: screenSizeSelected,
     x: 585, y: 315, z: 5.3,
     width: 150, height: BUTTON_HEIGHT,

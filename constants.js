@@ -1,7 +1,7 @@
 import { TELEPROMPTER_SCRIPT as TELEPROMPTER_SCRIPT_TEXT } from "./assets/text/teleprompter-script.js"
 
 // Globals
-export const DEBUG = true
+export const DEBUG = false
 export const DEVELOPMENT = ['localhost', '127.0.0.1'].includes(window.location.hostname)
 export const ROOT_URL = DEVELOPMENT ? '.' : 'https://plexisimulator.s3.us-east-1.amazonaws.com'
 

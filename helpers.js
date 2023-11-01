@@ -1,5 +1,10 @@
-import { colors } from './constants.js'
-import { removeMacro } from './macros.js'
+import { removeMacro } from './objectMacros.js'
+import {
+  colors,
+  START_TIME,
+  TELEPROMPTER_FONT_SIZE,
+  TELEPROMPTER_LINE_HEIGHT,
+} from './constants.js'
 
 export function preloadAsset(object, callback) {
   let element
@@ -27,48 +32,22 @@ export function preloadAsset(object, callback) {
     element.src = object.src
     element.addEventListener('load', callback) // Note when the image loads
   }
-  else if (typeof(object.getElement) === 'function') {
+  else if (typeof (object.getElement) === 'function') {
     element = object.getElement()
-    if (typeof(callback) === 'function') callback()
+    if (typeof (callback) === 'function') callback()
   }
-  else if (typeof(callback) === 'function') {
+  else if (typeof (callback) === 'function') {
     callback()
   }
 
   object.element = element
 }
 
-export function getGroupedObjects(objects, { object=null, groupName=null, includeSelf=false }) {
+export function getGroupedObjects(objects, { object = null, groupName = null, includeSelf = false }) {
   const defaultGroup = includeSelf ? [object] : []
   const group = groupName || object.group?.name
 
   return group
     ? objects.filter((o) => o.group?.name === group && (includeSelf || o.id !== object?.id))
     : defaultGroup
-}
-
-export function drawTargetCircle(object, context) {
-  const { x, y, width, pending } = object
-  const radius = width / 2
-
-  context.fillStyle = pending ? colors.closeBtn : colors.maximizeBtn
-  context.globalAlpha = object.opacity || .5
-  context.beginPath()
-  context.arc(x + radius, y + radius, radius, 0, 2 * Math.PI)
-  context.fill()
-  context.globalAlpha = 1
-}
-
-export function drawRoundedRectangle(x, y, width, height, radius, context) {
-  context.beginPath()
-  context.moveTo(x + radius, y)
-  context.lineTo(x + width - radius, y)
-  context.quadraticCurveTo(x + width, y, x + width, y + radius)
-  context.lineTo(x + width, y + height - radius)
-  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-  context.lineTo(x + radius, y + height)
-  context.quadraticCurveTo(x, y + height, x, y + height - radius)
-  context.lineTo(x, y + radius)
-  context.quadraticCurveTo(x, y, x + radius, y)
-  context.closePath()
 }

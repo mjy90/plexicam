@@ -9,10 +9,11 @@ import {
 } from './constants.js'
 
 import {
-  drawTargetCircle,
   preloadAsset,
   getGroupedObjects,
 } from './helpers.js'
+
+import { drawTargetCircle } from './ui.js'
 
 import { webgazerInit } from './webgazer.js'
 
@@ -88,15 +89,15 @@ export const BULLSEYE = [
 
 const GAZE_TARGET_MACRO = 'gaze target macro'
 const GAZE_TARGET_GROUP_PROPERTIES = [
-  { offset: {top: 1, left: 1} }, // top left
-  { offset: {top: 1}, centered: 'x' }, // top center
-  { offset: {top: 1, right: 1} }, // top right
-  { offset: {left: 1}, centered: 'y' }, // left
+  { offset: { top: 1, left: 1 } }, // top left
+  { offset: { top: 1 }, centered: 'x' }, // top center
+  { offset: { top: 1, right: 1 } }, // top right
+  { offset: { left: 1 }, centered: 'y' }, // left
   { centered: 'both' }, // center
-  { offset: {right: 1}, centered: 'y' }, // right
-  { offset: {bottom: 1, left: 1} }, // bottom left
-  { offset: {bottom: 1}, centered: 'x' }, // bottom center
-  { offset: {bottom: 1, right: 1} }, // bottom right
+  { offset: { right: 1 }, centered: 'y' }, // right
+  { offset: { bottom: 1, left: 1 } }, // bottom left
+  { offset: { bottom: 1 }, centered: 'x' }, // bottom center
+  { offset: { bottom: 1, right: 1 } }, // bottom right
 ]
 export const GAZE_TARGETS = GAZE_TARGET_GROUP_PROPERTIES.map((properties, i) => {
   return {

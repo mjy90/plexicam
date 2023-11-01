@@ -16,7 +16,7 @@ import {
   EYE_TRACKING_BUTTON,
   WINDOW_MANAGER_HEIGHT,
   DOCK_HEIGHT,
-  TEXT_SIZE,
+  FONT_SIZE,
   LINE_HEIGHT,
   MARGIN,
   BUTTON_HEIGHT,
@@ -31,6 +31,8 @@ import {
   screenSizes,
   screenTypes,
   colors,
+  TELEPROMPTER_SCRIPT,
+  FRAME_RATE,
 } from './constants.js'
 import {
   PLEXICAM_PRO,
@@ -40,11 +42,20 @@ import {
   addMacro,
   removeMacro,
   swapMacro,
-} from './macros.js'
+} from './objectMacros.js'
+import {
+  drawButton,
+  drawDropdown,
+  drawDropdownOption,
+  drawWindowManager,
+  drawDock,
+  drawDebugInfo,
+  formatTextForArea,
+  drawScrollingText,
+} from './ui.js'
 import {
   preloadAsset,
   getGroupedObjects,
-  drawRoundedRectangle,
 } from './helpers.js'
 import { filteredGaze, webgazerInit } from './webgazer.js'
 
@@ -117,7 +128,7 @@ var objects = [
     width: 640, height: 360,
     mobility: ['x', 'y'],
     renderWindowManager: true,
-    windowTitle: 'Zoom Meeting',
+    windowTitle: "Person You're Talking To",
     group: { name: MEETING_GROUP },
   },
   // {
@@ -129,14 +140,27 @@ var objects = [
   //   renderWindowManager: true,
   //   windowTitle: 'Interview Questions',
   // },
+  // {
+  //   id: 'teleprompter_old',
+  //   src: `${ROOT_URL}/assets/videos/PlexiCam Teleprompter.mp4`,
+  //   x: 300, y: 455, z: 4,
+  //   width: 300, height: 400,
+  //   mobility: ['x', 'y'],
+  //   renderWindowManager: true,
+  //   windowTitle: 'Your Script',
+  // },
   {
     id: 'teleprompter',
-    src: `${ROOT_URL}/assets/videos/PlexiCam Teleprompter.mp4`,
-    x: 920, y: 55, z: 4,
-    width: 300, height: 400,
+    // src: `${ROOT_URL}/assets/videos/PlexiCam Teleprompter.mp4`,
+    initialized: false,
+    init: setTeleprompterText,
+    draw: drawScrollingText,
+    x: 750, y: 55, z: 4,
+    width: 640, height: 720,
     mobility: ['x', 'y'],
     renderWindowManager: true,
-    windowTitle: 'Teleprompter',
+    windowTitle: 'Your Script',
+    text: TELEPROMPTER_SCRIPT,
   },
   {
     id: 'settings',
@@ -148,7 +172,7 @@ var objects = [
     },
     mobility: ['x', 'y'],
     renderWindowManager: true,
-    windowTitle: 'Settings',
+    windowTitle: 'Simulation Settings',
   },
   {
     id: FULLSCREEN_BUTTON,
@@ -277,7 +301,7 @@ function init() {
   assignRandomDebugColors()
 
   // Render at 30 FPS
-  window.setInterval(draw, 1000/30)
+  window.setInterval(draw, 1000 / FRAME_RATE)
 
   // Register mouse handlers last to be sure the user knows what they're clicking on
   canvas.onmousedown = mouseDown
@@ -330,7 +354,12 @@ function draw() {
   clear()
 
   for (let object of objects) {
-    let { x, y, width, height, mirror } = object
+    let { x, y, width, height, mirror, initialized = true, init } = object
+
+    if (!initialized && typeof (init) === 'function') {
+      init(object)
+      object.initialized = initialized = true
+    }
 
     // Determine position based on whether it's mirrored
     if (mirror) {
@@ -342,42 +371,45 @@ function draw() {
     if (object.element) {
       context.drawImage(object.element, x, y, width, height)
     }
-    else if (typeof(object.getElement) === 'function') {
+    else if (typeof (object.getElement) === 'function') {
       object.element = object.getElement()
       if (object.element) {
         context.drawImage(object.element, x, y, width, height)
       }
     }
-    else if (typeof(object.draw) === 'function') {
-      object.draw(object, context)
+    else if (typeof (object.draw) === 'function') {
+      object.draw(context, object)
     }
     else if (object.type === TYPES.button) {
-      drawButton(object)
+      drawButton(context, object)
     }
     else if (object.type === TYPES.dropdown) {
-      drawDropdown(object)
+      drawDropdown(context, object)
     }
     else if (object.type === TYPES.dropdownOption) {
-      drawDropdownOption(object)
+      drawDropdownOption(context, object)
     }
+    // else if (object.type === TYPES.scrollingText) {
+    //   drawScrollingText(context, object)
+    // }
 
     if (mirror) {
       context.restore()
     }
 
     if (object.renderWindowManager) {
-      drawWindowManager(object)
+      drawWindowManager(context, object)
     }
     if (object.id === DOCK) {
-      drawDock()
+      drawDock(context)
     }
     if (DEBUG) {
-      drawDebugInfo(object)
+      drawDebugInfo(context, mouseX, mouseY, object)
     }
   }
 
   if (DEBUG) {
-    drawDebugInfo()
+    drawDebugInfo(context, mouseX, mouseY)
   }
 }
 
@@ -454,7 +486,7 @@ function mouseDown(e) {
   }
 }
 
-function mouseUp(e){
+function mouseUp(e) {
   e.preventDefault()
   e.stopPropagation()
 
@@ -491,9 +523,9 @@ function mouseMove(e) {
       draggedObject.y += dy
 
     for (let object of groupedObjects) {
-      if(moveableInX && canMove(object, 'x', dx))
+      if (moveableInX && canMove(object, 'x', dx))
         object.x += dx
-      if(moveableInY && canMove(object, 'y', dy))
+      if (moveableInY && canMove(object, 'y', dy))
         object.y += dy
     }
 
@@ -537,7 +569,7 @@ function expandDropdown(dropdown) {
   const groupName = dropdown.group?.name || `${dropdown.id}_grp`
   dropdown.group ||= { name: groupName }
 
-  for (var i=0; i < dropdown.options.length; i++) {
+  for (var i = 0; i < dropdown.options.length; i++) {
     let option = dropdown.options[i]
 
     objects.push({
@@ -615,7 +647,7 @@ function calculatePpi() {
   const zoomRatio = isHiDpiDisplay ? window.devicePixelRatio / 2 : window.devicePixelRatio
 
   if (screenSize) {
-    ppi = Math.sqrt(canvas.width**2 + canvas.height**2) / screenSize / zoomRatio
+    ppi = Math.sqrt(canvas.width ** 2 + canvas.height ** 2) / screenSize / zoomRatio
   }
   else {
     ppi = 96 / zoomRatio
@@ -701,6 +733,11 @@ function createMaximizeButtons() {
     createMaximizeButton(object)
 }
 
+function setTeleprompterText(teleprompter) {
+  console.log('setTeleprompterText')
+  teleprompter.text = formatTextForArea(context, TELEPROMPTER_SCRIPT, teleprompter.width)
+}
+
 function createMaximizeButton(parentWindow) {
   const { id, x, y, z, group } = parentWindow
   const size = WINDOW_MANAGER_HEIGHT / 2
@@ -740,23 +777,23 @@ function calculateObjectSizes() {
 
   // Now that all objects are scaled, we can find any that need repositioning within their group
   const objectsNeedRepositioning = objects.filter(o => o.group?.centered || o.group?.offset)
-  const groupsNeedRepositioning =  Array.from(new Set(objectsNeedRepositioning.map(o => o.group.name)))
+  const groupsNeedRepositioning = Array.from(new Set(objectsNeedRepositioning.map(o => o.group.name)))
   for (let group of groupsNeedRepositioning) {
     const groupedObjects = getGroupedObjects(objects, { groupName: group })
 
     const minXValues = groupedObjects.filter(o => o.x !== undefined && o.x >= -MAX_OFFSCREEN_DISTANCE)
-                                     .map(o => o.x)
+      .map(o => o.x)
     const minX = minXValues.length ? Math.min(...minXValues) : 0
     const maxXValues = groupedObjects.filter(o => o.x !== undefined && o.x + (o.width || 0) <= canvas.width + MAX_OFFSCREEN_DISTANCE)
-                                     .map(o => o.x + (o.width || 0))
+      .map(o => o.x + (o.width || 0))
     const maxX = maxXValues.length ? Math.max(...maxXValues) : canvas.width
     const centerX = (minX + maxX) / 2
 
     const minYValues = groupedObjects.filter(o => o.y !== undefined && o.y >= -MAX_OFFSCREEN_DISTANCE)
-                                     .map(o => o.y)
+      .map(o => o.y)
     const minY = minYValues.length ? Math.min(...minYValues) : 0
     const maxYValues = groupedObjects.filter(o => o.y !== undefined && o.y + (o.height || 0) <= canvas.height + MAX_OFFSCREEN_DISTANCE)
-                                     .map(o => o.y + (o.height || 0))
+      .map(o => o.y + (o.height || 0))
     const maxY = maxYValues.length ? Math.max(...maxYValues) : canvas.height
     const centerY = (minY + maxY) / 2
 
@@ -789,139 +826,6 @@ function resizeWallpaper() {
   wallpaper.height = canvas.height // / 16 * 9 // Maintain aspect ratio of wallpaper
 }
 
-function drawButton(object) {
-  const { x, y, width, height, color, text } = object
-
-  // Draw the button
-  context.beginPath()
-  drawRoundedRectangle(x, y, width, height, BUTTON_RADIUS, context)
-  context.fillStyle = color || colors.btn
-  context.fill()
-
-  // Write the text
-  if (text) {
-    const textOffset = y+MARGIN+(object.height/2)
-
-    context.fillStyle = colors.btnText
-    context.font = `${TEXT_SIZE}px Sans-Serif`
-    context.textAlign = 'center'
-    context.textBaseline = 'alphabetic'
-    context.fillText(text, x + (width / 2), textOffset)
-  }
-}
-
-function drawDropdown(object) {
-  const top = object.y
-  const bottom = top + object.height
-  const left = object.x
-  const right = left + object.width
-
-  // Draw box around the dropdown and, if expanded, its options
-  const boxHeight = object.expanded
-    ? object.height + (object.options.length * LINE_HEIGHT)
-    : object.height
-  context.fillStyle = colors.window
-  context.strokeStyle = 'black'
-  drawRoundedRectangle(left, top, object.width, boxHeight, BUTTON_RADIUS, context)
-  context.fill()
-  context.stroke()
-
-  // Draw arrow
-  const arrowSize = [8, 5]
-  const arrowTop = top + ((object.height - arrowSize[1]) / 2)
-  const arrowLeftCorner = [right-MARGIN-arrowSize[0], arrowTop]
-  const arrowRightCorner = [right-MARGIN, arrowTop]
-  const arrowBottomCorner = [right-MARGIN-(arrowSize[0]/2), arrowTop+arrowSize[1]]
-  context.beginPath()
-  context.moveTo(arrowLeftCorner[0], arrowLeftCorner[1])
-  context.lineTo(arrowRightCorner[0], arrowRightCorner[1])
-  context.lineTo(arrowBottomCorner[0], arrowBottomCorner[1])
-  context.closePath()
-  context.fillStyle = 'black'
-  context.fill()
-
-  // Draw value
-  const textOffset = top+MARGIN+(object.height/2)
-  const displayValue = object.value ? `${object.value}` : object.defaultText
-  context.fillStyle = 'black'
-  context.font = '12px Sans-Serif'
-  context.textAlign = 'left'
-  context.textBaseline = 'alphabetic'
-  context.fillText(displayValue, left+MARGIN, textOffset)
-}
-
-function drawDropdownOption(option) {
-  // Draw text
-  context.fillStyle = 'black'
-  context.font = '12px Sans-Serif'
-  context.fillText(option.text, option.x+MARGIN, option.y+LINE_HEIGHT-MARGIN)
-}
-
-// Generates a fake toolbar above the given element and groups the two
-function drawWindowManager(object) {
-  const radius = WINDOW_MANAGER_HEIGHT * 0.5
-  const straightSide = WINDOW_MANAGER_HEIGHT - radius
-  const top = object.y - WINDOW_MANAGER_HEIGHT
-  const bottom = object.y
-  const left = object.x
-  const right = left + object.width
-
-  // Draw this shape for the toolbar:
-  //    ________________
-  //  /                  \
-  // |                    |
-  // +--------------------
-  context.beginPath()
-  context.moveTo(left, bottom)                           // +
-  context.lineTo(left, bottom - straightSide)            // |
-  context.arcTo(left, top, left + radius, top, radius)   // /
-  context.lineTo(right - radius, top)                    //   ______________
-  context.arcTo(right, top, right, top + radius, radius) //                  \
-  context.lineTo(right, bottom)                          //                   |
-  context.closePath()                                    //  -----------------
-  // Fill the shape
-  context.fillStyle = colors.toolbar
-  context.fill()
-
-  // Draw buttons
-  const halfHeight = (WINDOW_MANAGER_HEIGHT / 2)
-  // Close
-  context.beginPath()
-  context.arc(left + halfHeight, top + halfHeight, halfHeight / 2, 2 * Math.PI, false);
-  context.closePath()
-  context.fillStyle = colors.closeBtn
-  context.fill()
-  // Minimize
-  context.beginPath()
-  context.arc(left + (2.5 * halfHeight), top + halfHeight, halfHeight / 2, 2 * Math.PI, false);
-  context.closePath()
-  context.fillStyle = colors.minimizeBtn
-  context.fill()
-  // Maximize
-  context.beginPath()
-  context.arc(left + (4 * halfHeight), top + halfHeight, halfHeight / 2, 2 * Math.PI, false);
-  context.closePath()
-  context.fillStyle = colors.maximizeBtn
-  context.fill()
-}
-
-function drawDock() {
-  const top = canvas.height - DOCK_HEIGHT
-  const bottom = canvas.height
-  const left = 0
-  const right = canvas.width
-
-  // Dock
-  context.beginPath()
-  context.moveTo(left, bottom)
-  context.lineTo(left, top)
-  context.lineTo(right, top)
-  context.lineTo(right, bottom)
-  context.lineTo(left, bottom)
-  context.fillStyle = colors.toolbar
-  context.fill()
-}
-
 function assignRandomDebugColors() {
   for (let object of objects)
     object.debugColor = randomColor()
@@ -931,35 +835,6 @@ function randomColor() {
   const hex = '0123456789ABCDEF'
   const hexColor = [...Array(6)].map(() => hex[Math.floor(Math.random() * 16)]).join('')
   return `#${hexColor}`
-}
-
-function drawDebugInfo(object) {
-  // Draw object's debug info
-  if (object) {
-    const { x, y, z, width, height, debugColor } = object
-
-    // Bounding box
-    context.strokeStyle = debugColor
-    context.beginPath()
-    context.rect(x, y, width, height)
-    context.closePath()
-    context.stroke()
-
-    // Coordinates, offset from the upper-left corner
-    const text = `${x}, ${y}, ${z}`
-    const textWidth = context.measureText(text).width
-    context.fillStyle = debugColor
-    context.font = '12px Sans-Serif'
-    context.fillText(text, x - textWidth - 5, y - 7)
-  }
-  // Draw global debug info
-  else {
-    const text = `${mouseX}, ${mouseY}`
-    const textWidth = context.measureText(text).width
-    context.fillStyle = 'magenta'
-    context.font = '12px Sans-Serif'
-    context.fillText(text, mouseX - textWidth - 5, mouseY - 7)
-  }
 }
 
 // End draw helpers

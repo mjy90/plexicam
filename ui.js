@@ -265,13 +265,26 @@ export function formatTextForArea(context, text, width) {
 export function drawScrollingText(context, object) {
   const { text, x, y, width, height } = object
   const lines = text.split('\n')
-  const totalHeight = lines.length * TELEPROMPTER_LINE_HEIGHT + height
-  const startOffset = (height - (((SCROLLING_TEXT_LINES_PER_SECOND * (Date.now() - START_TIME) / 1000) * TELEPROMPTER_LINE_HEIGHT) % totalHeight))
+
+  // Determine the offsets for the initial instance of the text and the clone.
+  // In order for the text to repeat seamlessly without having to leave the window before restarting,
+  // we need to clone the text and offset it by some amount from the end of the original text.
+  const paragraphSpaceCount = lines.filter(line => line === '').length
+  const textLineCount = lines.length - paragraphSpaceCount
+  const textAndWindowHeight = (textLineCount * TELEPROMPTER_LINE_HEIGHT) +
+    (paragraphSpaceCount * TELEPROMPTER_PARAGRAPH_SPACE) +
+    height
+  const startOffset = height - (
+    (
+      (SCROLLING_TEXT_LINES_PER_SECOND * (Date.now() - START_TIME) / 1000) * // Lines to offset by...
+      TELEPROMPTER_LINE_HEIGHT // ... times line height
+    ) % textAndWindowHeight // Modulus to make the text loop
+  )
 
   context.save()
   context.beginPath()
   context.rect(x, y, width, height)
-  context.clip()
+  context.clip() // Keep the scrolling text masked by the window
 
   // Fill the background
   context.fillStyle = 'black'
@@ -283,10 +296,9 @@ export function drawScrollingText(context, object) {
 
   var lineOffset = 0
   for (var i = 0; i < lines.length; i++) {
-    // Important text does not like being place at fractions of a pixel
-    // make sure you round the y pos
+    // Text doesn't like being placed at fractions of a pixel on canvases, so round the y position.
     lineOffset += lines[i] === '' ? TELEPROMPTER_PARAGRAPH_SPACE : TELEPROMPTER_LINE_HEIGHT
     context.fillText(lines[i], x + TELEPROMPTER_MARGIN, Math.floor(y + startOffset + lineOffset))
   }
-  context.restore() // remove the clipping
+  context.restore()
 }

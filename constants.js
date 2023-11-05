@@ -67,6 +67,7 @@ export const booleanOptions = [
 export const screenSizes = [
   { text: '13"', value: 13 },
   { text: '15"', value: 15 },
+  { text: '16"', value: 16 },
   { text: '17"', value: 17 },
   { text: '24"', value: 24 },
   { text: '27"', value: 27 },

@@ -313,23 +313,21 @@ function init() {
   canvas.addEventListener('mozfullscreenchange', fullscreenChanged)
   canvas.addEventListener('msfullscreenchange', fullscreenChanged)
   canvas.addEventListener('webkitfullscreenchange', fullscreenChanged)
-  document.addEventListener('fullscreenchange', fullscreenChanged)
-  document.addEventListener('mozfullscreenchange', fullscreenChanged)
-  document.addEventListener('msfullscreenchange', fullscreenChanged)
-  document.addEventListener('webkitfullscreenchange', fullscreenChanged)
 
   // Register resize handler
   window.addEventListener('resize', onResize)
 }
 
 function fitCanvasToContainer() {
+  // Get upper-left corner of the container relative to the window
   boundingBox = canvas.getBoundingClientRect()
   offsetX = boundingBox.left
   offsetY = boundingBox.top
 
   if (fullscreen) {
-    canvas.width = window.screen.width
-    canvas.height = window.screen.height
+    // Fit to screen
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
   }
   else {
     // Set canvas to width of containing div, and a height that makes it 16:9
@@ -389,9 +387,6 @@ function draw() {
     else if (object.type === TYPES.dropdownOption) {
       drawDropdownOption(context, object)
     }
-    // else if (object.type === TYPES.scrollingText) {
-    //   drawScrollingText(context, object)
-    // }
 
     if (mirror) {
       context.restore()
@@ -910,7 +905,7 @@ function fullscreenChanged() {
     fitCanvasToContainer()
     if (fullscreen) calculatePpi()
     calculateObjectSizes()
-  }, 30)
+  }, 1000 / FRAME_RATE)
 }
 
 function getIsFullscreen() {
